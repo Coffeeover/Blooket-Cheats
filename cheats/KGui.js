@@ -1342,6 +1342,51 @@
                         }
                     },
                     {
+                        name: "Auto Reset Players",
+                        description: "Resets a player if their gold is over a threshold",
+                        type: "toggle",
+                        enabled: false,
+                        data: null,
+                        inputs: [
+                            {
+                                name: "Threshold",
+                                type: "number",
+                            },
+                        ],
+                        run: function (threshold) {
+                            const interval = 100;
+                            let stateNode = getStateNode();
+                            let controller = stateNode.props.liveGameController;
+                            let clientName = stateNode.props.client.name;
+
+                            if (!this.enabled) {
+                                this.enabled = true;
+
+                                this.data = setInterval(() => {
+                                    controller.getDatabaseVal("c", (players) => {
+                                        if (!players) return;
+
+                                        for (const [player, data] of Object.entries(players)) {
+                                            const gold = data?.g || data?.gold || 0;
+
+                                            if (gold >= threshold) {
+                                                controller.setVal({
+                                                    path: "c/" + clientName + "/tat",
+                                                    val: `${player}:swap:0`,
+                                                });
+                                            }
+                                        }
+                                    });
+                                }, interval);
+
+                            } else {
+                                this.enabled = false;
+                                clearInterval(this.data);
+                                this.data = null;
+                            }
+                        },
+                    },
+                    {
                         name: "Swap Gold",
                         description: "Swaps gold with someone",
                         inputs: [
